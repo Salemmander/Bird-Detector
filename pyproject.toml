@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "bird detection"
+version = "0.1.0"
+description = ""
+authors = ["Salem Nassar <salemnassar5@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = {version = "^2.6.0+cu126", source = "cuda"}
+torchvision = {version = "^0.21.0+cu126", source = "cuda"}
+pandas = "^2.2.3"
+opencv-python = "^4.11.0.86"
+ipykernel = "^6.29.5"
+albumentations = "^2.0.5"
+matplotlib = "^3.10.1"
+tqdm = "^4.67.1"
+jupyter = "^1.1.1"
+ipywidgets = "^8.1.5"
+
+
+[[tool.poetry.source]]
+name = "cuda"
+url = "https://download.pytorch.org/whl/cu126"
+priority = "supplemental"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
