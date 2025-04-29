@@ -11,10 +11,12 @@ import matplotlib.patches as patches
 
 class CUB200(Dataset):
 
-    def __init__(self, data_root_path):
+    def __init__(self, data_root_path, image_set="train"):
 
         self.img_size = 448
         self.num_grid = 7
+        self.num_classes = 200
+        self.image_set = image_set
         self.grid_size = self.img_size / self.num_grid
         self.pixel_mean = np.array([[[110.2801, 127.6312, 124.0555]]], dtype=np.float32)
         self.image_root_path = os.path.join(data_root_path, "CUB_200_2011/images")
@@ -34,9 +36,20 @@ class CUB200(Dataset):
             sep=" ",
             names=["index", "class"],
         )
+        split = pd.read_csv(
+            os.path.join(data_root_path, "CUB_200_2011/train_test_split.txt"),
+            sep=" ",
+            names=["index", "split"],
+        )
 
         self.data_df = self.data_df.merge(bboxes, left_on="index", right_on="index")
         self.data_df = self.data_df.merge(classes, left_on="index", right_on="index")
+        self.data_df = self.data_df.merge(split, left_on="index", right_on="index")
+
+        if self.image_set == "train":
+            self.data_df = self.data_df[self.data_df["split"] == 0]
+        elif self.image_set == "test":
+            self.data_df = self.data_df[self.data_df["split"] == 1]
 
     def __getitem__(self, index):
         data = self.data_df.iloc[index]
@@ -94,7 +107,19 @@ class CUB200(Dataset):
         gt_mask[x_grid, y_grid] = 1
         # endregion
 
-        return {"image": image, "gt_box": gt_box, "gt_mask": gt_mask}
+        # region Class
+        class_id = data["class"] - 1  # Adjust to 0-based indexing (1–200 to 0–199)
+        assert 0 <= class_id < self.num_classes, f"Invalid class ID {class_id}"
+        gt_class = torch.zeros(self.num_classes, 7, 7)
+        gt_class[class_id, x_grid, y_grid] = 1.0
+        # endregion
+
+        return {
+            "image": image,
+            "gt_box": gt_box,
+            "gt_mask": gt_mask,
+            "gt_class": gt_class,
+        }
 
     def __len__(self):
         return len(self.data_df)
@@ -133,6 +158,7 @@ def draw_image(image, bbox, mask, pixel_mean, img_name="test"):
 
 
 if __name__ == "__main__":
-    dataset = CUB200("data")
+    dataset = CUB200("data", "train")
+    print(len(dataset))
     image, bbox, mask = dataset[2].values()
     draw_image(image, bbox, mask, dataset.pixel_mean)

@@ -89,7 +89,7 @@ class YOLOv1(nn.Module):
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    network = YOLOv1(num_boxes=2, num_classes=1, device=device)
+    network = YOLOv1(num_boxes=2, num_classes=200, device=device)
     network.to(device)
     print(network)
 

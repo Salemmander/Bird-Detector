@@ -5,7 +5,7 @@ from Loss import compute_loss
 from YOLOv1 import YOLOv1
 from Dataset import CUB200
 import torch
-import torch.utils.data.dataloader as Dataloader
+from torch.utils.data import DataLoader
 
 
 def plot_losses(losses, filename="visualizations/train_loss.pdf"):
@@ -14,7 +14,7 @@ def plot_losses(losses, filename="visualizations/train_loss.pdf"):
     l = np.mean(losses, axis=1)
 
     plt.subplot(1, 1, 1)
-    plt.plot(range(num_epoches), l, marker="o", alpha=0.5, ms=4)
+    plt.plot(range(1, num_epoches + 1), l, marker="o", alpha=0.5, ms=4)
     plt.title("Loss")
     plt.xlabel("Epoch")
     loss_xlim = plt.xlim()
@@ -27,18 +27,17 @@ def plot_losses(losses, filename="visualizations/train_loss.pdf"):
 
 if __name__ == "__main__":
     num_epochs = 10
-    batch_size = 2
-    learning_rate = 1e-4
-    num_workers = 2
+    batch_size = 16
+    learning_rate = 0.00001
+    num_workers = 4
 
-    dataset = CUB200("data")
-    dataset = Dataloader(
+    dataset = CUB200("data", "train")
+
+    train_dataset = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
-    
-    # IMPLEMENT TRAIN AND TEST SETS
 
-    epoch_size = len(dataset)
+    epoch_size = len(train_dataset)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -61,10 +60,11 @@ if __name__ == "__main__":
     losses = np.zeros((num_epochs, epoch_size), dtype=np.float32)
 
     for epoch in range(num_epochs):
-        for i, sample in enumerate(dataset):
+        for i, sample in enumerate(train_dataset):
             image = sample["image"].to(device)
             gt_box = sample["gt_box"].to(device)
             gt_mask = sample["gt_mask"].to(device)
+            gt_class = sample["gt_class"].to(device)
 
             output, pred_box = model(image)
 
@@ -73,6 +73,7 @@ if __name__ == "__main__":
                 pred_box,
                 gt_box,
                 gt_mask,
+                gt_class,
                 num_boxes,
                 num_classes,
                 grid_size,
@@ -82,14 +83,14 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            losses[epoch, i] = loss
 
             print(
-                f"Epoch {epoch}/{num_epochs}, Iteration {i}/{epoch_size}, lr {learning_rate}, Loss {loss}"
+                f"Epoch {epoch+1}/{num_epochs}, Iteration {i+1}/{epoch_size}, lr {learning_rate}, Loss {loss}"
             )
 
     state = model.state_dict()
     filename = "YOLOv1.pth"
     torch.save(state, os.path.join(output_dir, filename))
     print(filename)
-
     plot_losses(losses)

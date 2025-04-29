@@ -42,6 +42,7 @@ def compute_loss(
     pred_box,
     gt_box,
     gt_mask,
+    gt_class,
     num_boxes,
     num_classes,
     grid_size,
@@ -88,7 +89,7 @@ def compute_loss(
     # compute yolo loss
     weight_coord = 5.0
     weight_noobj = 0.5
-
+    weight_class = 1.0
     # according to the YOLO paper, compute the following losses
     # loss_x: loss function on x coordinate (cx)
     # loss_y: loss function on y coordinate (cy)
@@ -143,16 +144,20 @@ def compute_loss(
         )
     )
     loss_cls = torch.sum(
-        gt_mask * torch.pow(num_classes - output[:, 5 * num_boxes, :, :], 2.0)
+        box_mask[:, 0, :, :].unsqueeze(1)
+        * torch.pow(
+            gt_class - output[:, 5 * num_boxes : 5 * num_boxes + num_classes, :, :], 2.0
+        )
     )
     loss_x = weight_coord * loss_x
     loss_y = weight_coord * loss_y
     loss_w = weight_coord * loss_w
     loss_h = weight_coord * loss_h
     loss_noobj = weight_noobj * loss_noobj
+    loss_cls = weight_class * loss_cls  # Apply class loss weight
 
     # print('lx: %.4f, ly: %.4f, lw: %.4f, lh: %.4f, lobj: %.4f, lnoobj: %.4f, lcls: %.4f' % (loss_x, loss_y, loss_w, loss_h, loss_obj, loss_noobj, loss_cls))
 
-    # the totol loss
+    # the total loss
     loss = loss_x + loss_y + loss_w + loss_h + loss_obj + loss_noobj + loss_cls
     return loss
