@@ -125,7 +125,7 @@ class CUB200(Dataset):
         return len(self.data_df)
 
 
-def draw_image(image, bbox, mask, pixel_mean, img_name="test"):
+def draw_image(image, bbox, mask, cls, pixel_mean, img_name="test"):
     image = image.numpy().transpose((1, 2, 0))
     image = image * 255 + pixel_mean
     image = image[:, :, ::-1]
@@ -140,6 +140,8 @@ def draw_image(image, bbox, mask, pixel_mean, img_name="test"):
     h = bbox[3, x, y] * 448
     x1 = cx - (w / 2)
     y1 = cy - (h / 2)
+
+    print(torch.where(cls[:, x, y] == 1)[0])
 
     fig, ax = plt.subplots()
 
@@ -159,6 +161,5 @@ def draw_image(image, bbox, mask, pixel_mean, img_name="test"):
 
 if __name__ == "__main__":
     dataset = CUB200("data", "train")
-    print(len(dataset))
-    image, bbox, mask = dataset[2].values()
-    draw_image(image, bbox, mask, dataset.pixel_mean)
+    image, bbox, mask, cls = dataset[450].values()
+    draw_image(image, bbox, mask, cls, dataset.pixel_mean)

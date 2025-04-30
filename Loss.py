@@ -144,7 +144,7 @@ def compute_loss(
         )
     )
     loss_cls = torch.sum(
-        box_mask[:, 0, :, :].unsqueeze(1)
+        gt_mask.unsqueeze(1)
         * torch.pow(
             gt_class - output[:, 5 * num_boxes : 5 * num_boxes + num_classes, :, :], 2.0
         )
