@@ -28,7 +28,7 @@ def plot_losses(losses, filename="visualizations/train_loss.pdf"):
 if __name__ == "__main__":
     num_epochs = 10
     batch_size = 16
-    learning_rate = 0.00001
+    learning_rate = 0.0001
     num_workers = 4
 
     dataset = CUB200("data", "train")
