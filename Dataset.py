@@ -42,6 +42,16 @@ class CUB200(Dataset):
             names=["index", "split"],
         )
 
+        self.class_list = (
+            self.data_df["file_path"]
+            .str.split("/")
+            .str[0]
+            .str.split(".")
+            .str[-1]
+            .str.replace("_", " ")
+            .unique()
+        )
+
         self.data_df = self.data_df.merge(bboxes, left_on="index", right_on="index")
         self.data_df = self.data_df.merge(classes, left_on="index", right_on="index")
         self.data_df = self.data_df.merge(split, left_on="index", right_on="index")
@@ -154,7 +164,7 @@ def draw_image(image, bbox, mask, cls, pixel_mean, img_name="test"):
     )
     ax.add_patch(rect)
     ax.plot(cx, cy, "ro", markersize=8)
-
+    plt.title()
     plt.savefig(f"visualizations/{img_name}", bbox_inches="tight", dpi=100)
     plt.close(fig)
 

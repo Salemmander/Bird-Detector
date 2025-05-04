@@ -9,19 +9,12 @@ from torch.utils.data import DataLoader
 
 
 def plot_losses(losses, filename="visualizations/train_loss.pdf"):
-
     num_epoches = losses.shape[0]
     l = np.mean(losses, axis=1)
-
-    plt.subplot(1, 1, 1)
     plt.plot(range(1, num_epoches + 1), l, marker="o", alpha=0.5, ms=4)
     plt.title("Loss")
     plt.xlabel("Epoch")
-    loss_xlim = plt.xlim()
-
-    plt.gcf().set_size_inches(6, 4)
     plt.savefig(filename, bbox_inches="tight")
-    print("save training loss plot to %s" % (filename))
     plt.clf()
 
 
@@ -43,7 +36,7 @@ if __name__ == "__main__":
     print(device)
 
     num_classes = 200
-    num_boxes = 2
+    num_boxes = 1
     model = YOLOv1(num_boxes, num_classes, device)
     model.to(device)
     image_size = model.image_size
