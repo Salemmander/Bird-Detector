@@ -129,7 +129,7 @@ with torch.no_grad():
         top_pred_class = pred_classes[max_iou_idx]
 
         print(
-            f"Image {i+1}/{epoch_size}, GT Class: {dataset.class_list[cls]}, Predicted Class: {dataset.class_list[top_pred_class]}, IoU: {ious[max_iou_idx]:.2f}"
+            f"Image {i+1}/{epoch_size}, GT Class: '{dataset.class_list[cls[0]]}', Predicted Class: '{dataset.class_list[top_pred_class]}', IoU: {ious[max_iou_idx]:.2f}"
         )
         if top_pred_class == cls[0]:
             correct += 1

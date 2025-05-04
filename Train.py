@@ -19,7 +19,7 @@ def plot_losses(losses, filename="visualizations/train_loss.pdf"):
 
 
 if __name__ == "__main__":
-    num_epochs = 10
+    num_epochs = 50
     batch_size = 16
     learning_rate = 0.0001
     num_workers = 4

@@ -87,9 +87,14 @@ def compute_loss(
                     # print("select box %d with iou %.2f" % (select, max_iou))
 
     # compute yolo loss
-    weight_coord = 5.0
+    # weight_coord = 5.0
+    # weight_noobj = 0.5
+    # weight_class = 1.0
+
+    weight_coord = 2.0  # Reduce to focus less on localization
     weight_noobj = 0.5
-    weight_class = 1.0
+    weight_class = 2.0  # Increase to emphasize classification
+
     # according to the YOLO paper, compute the following losses
     # loss_x: loss function on x coordinate (cx)
     # loss_y: loss function on y coordinate (cy)
@@ -159,5 +164,7 @@ def compute_loss(
     # print('lx: %.4f, ly: %.4f, lw: %.4f, lh: %.4f, lobj: %.4f, lnoobj: %.4f, lcls: %.4f' % (loss_x, loss_y, loss_w, loss_h, loss_obj, loss_noobj, loss_cls))
 
     # the total loss
-    loss = loss_x + loss_y + loss_w + loss_h + loss_obj + loss_noobj + loss_cls
+    loss = (
+        loss_x + loss_y + loss_w + loss_h + loss_obj + loss_noobj + loss_cls
+    ) / batch_size
     return loss
