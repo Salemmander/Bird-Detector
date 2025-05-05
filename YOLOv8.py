@@ -1,35 +1,36 @@
-from ultralytics import YOLO
-import cv2
+from ultralytics import YOLO, settings
 import torch
 import os
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device)
+if __name__ == "__main__":
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
-# Load the YOLOv8 detection model
+    # Set the custom directory for downloading models
+    model_path = "models"
+    os.makedirs(model_path, exist_ok=True)
+    settings.update({"weights_dir": model_path})
 
-model_path = "models/"
-os.makedirs(model_path, exist_ok=True)
-model = YOLO(model_path + "yolov8n.pt")
+    # Load the pre-trained YOLOv8 model
+    model_name = "yolov8n.pt"
+    model = YOLO(os.path.join(model_path, model_name))
+    model.to(device)
 
-# Load an image
-image_path = "data/CUB_200_2011/images/001.Black_footed_Albatross/Black_Footed_Albatross_0001_796111.jpg"  # Replace with your image path
-image = cv2.imread(image_path)
+    # Path to the dataset configuration file
+    data_yaml = "N:/datasets/cub200_yolo/cub200.yaml"
 
-# Run inference
-results = model(image)
+    # Fine-tune the model
+    model.train(
+        data=data_yaml,  # Path to dataset YAML
+        epochs=50,  # Number of training epochs
+        imgsz=640,  # Image size
+        batch=16,  # Batch size
+        name="yolov8n_cub200",  # Name for saving the model
+        project="runs/train",  # Directory to save training results
+        device=device,  # Use GPU or CPU
+        pretrained=True,  # Use pre-trained weights
+    )
 
-# Process and print detected objects with their classes
-for result in results:
-    for box in result.boxes:
-        class_id = int(box.cls)  # Class ID
-        class_name = model.names[class_id]  # Class name (e.g., "dog", "cat")
-        confidence = box.conf.item()  # Confidence score
-        coords = box.xyxy[
-            0
-        ].tolist()  # Bounding box coordinates [x_min, y_min, x_max, y_max]
-        print(f"Detected: {class_name} (Confidence: {confidence:.2f}) at {coords}")
-
-# Optionally, display the image with bounding boxes
-annotated_image = results[0].plot()  # Draw bounding boxes and labels
-cv2.imwrite("visualizations/YOLOv8 Detection.jpg", annotated_image)
+    print(f"Model {model_name} fine-tuned and saved in runs/train/yolov8n_cub200")
+    print(f"Model weights downloaded to: {model_path}")

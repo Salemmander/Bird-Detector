@@ -4,3 +4,5 @@ __pycache__
 poetry.lock
 models/*
 visualizations/*
+cub200_yolo/images
+cub200_yolo/labels

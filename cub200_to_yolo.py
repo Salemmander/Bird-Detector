@@ -36,7 +36,9 @@ class_labels = {}
 with open(class_label_file, "r") as f:
     for line in f:
         img_id, class_id = line.strip().split()
-        class_labels[int(img_id)] = int(class_id) - 1  # Convert to 0-based indexing
+        class_labels[int(img_id)] = (
+            int(class_id) - 1
+        )  # Convert to 0-based indexing (0 to 199)
 
 # Read bounding boxes
 bboxes = {}
@@ -67,15 +69,12 @@ for img_id in image_list:
     w_norm = w / img_w
     h_norm = h / img_h
 
-    # Write YOLO annotation (class_id = 0 for "bird")
+    # Write YOLO annotation (class_id = species ID, 0 to 199)
     output_label_path = os.path.join(
         output_root, f"labels/{split_dir}/{img_name.replace('.jpg', '.txt')}"
     )
+    class_id = class_labels[img_id]
     with open(output_label_path, "w") as f:
-        f.write(f"0 {x_center} {y_center} {w_norm} {h_norm}\n")
-
-    # Save species class for later use (optional metadata)
-    species_class = class_labels[img_id]
-    # You can save this to a separate file or use it during training
+        f.write(f"{class_id} {x_center} {y_center} {w_norm} {h_norm}\n")
 
 print(f"Dataset prepared in: {output_root}")
