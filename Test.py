@@ -14,7 +14,7 @@ class_names = list(classes["class"].str.split(".").str[-1].str.replace("_", " ")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-model_path = "runs/train/yolov8n_cub200/weights/best.pt"
+model_path = "runs/train/yolov8l_cub2003/weights/best.pt"
 if not os.path.exists(model_path):
     print(f"Error: Fune-tuned model {model_path} not found")
     exit(1)
@@ -24,7 +24,7 @@ model = YOLO(model_path)
 model.to(device)
 
 image_path = (
-    "data/CUB_200_2011/images/039.Least_Flycatcher/Least_Flycatcher_0001_30221.jpg"
+    "data/CUB_200_2011/images/026.Bronzed_Cowbird/Bronzed_Cowbird_0002_796244.jpg"
 )
 
 if not os.path.exists(image_path):
