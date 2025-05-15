@@ -26,12 +26,13 @@ if __name__ == "__main__":
     epochs = 50
     batch_size = 8
     img_size = 640
+    model_name = "yolov11n.pt"
     # Set up logging
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     # File handler with rotation to manage log file size
     file_handler = RotatingFileHandler(
-        "N:/Projects/Bird Detection/logs/training.log",
+        f"N:/Projects/Bird Detection/logs/{model_name}_{img_size}_{epochs}_training.log",
         maxBytes=10 * 1024 * 1024,  # 10 MB
         backupCount=5,
     )
@@ -41,7 +42,9 @@ if __name__ == "__main__":
     logger.addHandler(file_handler)
     # Redirect stdout/stderr to logger
     sys.stdout = StreamToLogger(logger, logging.INFO)
-    sys.stderr = StreamToLogger(logger, logging.ERROR)
+    sys.stderr = StreamToLogger(
+        logger, logging.INFO
+    )  # model.train() seems to log to stderr not stdout this is a patch for the logging
 
     logger.info(f"Epochs: {epochs}, Batch Size: {batch_size}, Image Size: {img_size}")
     # Set device
@@ -53,7 +56,7 @@ if __name__ == "__main__":
     os.makedirs(model_path, exist_ok=True)
     settings.update({"weights_dir": model_path})
     # Load the pre-trained YOLOv8 model
-    model_name = "yolov8l.pt"
+
     model = YOLO(os.path.join(model_path, model_name))
     model.to(device)
     logger.info(f"Model being tuned: {model_name}")
@@ -67,7 +70,8 @@ if __name__ == "__main__":
         epochs=epochs,  # Number of training epochs
         imgsz=img_size,  # Image size
         batch=batch_size,  # Batch size
-        name="yolov8l_cub200",  # Name for saving the model
+        name=f"{model_name.split('.')[-1]}_cub200_{img_size}_{epochs}",  # Name for saving the model
+        exist_ok=True,  # Will overwrite runs with the same name
         project="runs/train",  # Directory to save training results
         device=device,  # Use GPU or CPU
         pretrained=True,  # Use pre-trained weights

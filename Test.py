@@ -1,53 +1,77 @@
 from ultralytics import YOLO
-import os
-import cv2
-import pandas as pd
 import torch
-
-classes = pd.read_csv(
-    "data/CUB_200_2011/classes.txt", sep=" ", names=["index", "class"]
-)
-
-class_names = list(classes["class"].str.split(".").str[-1].str.replace("_", " "))
+import os
+import logging
+import sys
+from logging.handlers import RotatingFileHandler
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
+# Custom stream handler to redirect stdout/stderr to logger
+class StreamToLogger:
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ""
 
-model_path = "runs/train/yolov8l_cub2003/weights/best.pt"
-if not os.path.exists(model_path):
-    print(f"Error: Fune-tuned model {model_path} not found")
-    exit(1)
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
 
-model = YOLO(model_path)
-
-model.to(device)
-
-image_path = (
-    "data/CUB_200_2011/images/026.Bronzed_Cowbird/Bronzed_Cowbird_0002_796244.jpg"
-)
-
-if not os.path.exists(image_path):
-    print(f"Error: Test iamge {image_path} not found")
-    exit(1)
-
-image = cv2.imread(image_path)
-if image is None:
-    print(f"Error: Faield to load test iamge {image_path}")
-    exit(1)
+    def flush(self):
+        pass
 
 
-results = model.predict(image, device=device, imgsz=640, verbose=False)
+if __name__ == "__main__":
+    # Set up logging
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    file_handler = RotatingFileHandler(
+        "N:/Projects/Bird Detection/logs/test_max_det_1.log",
+        maxBytes=10 * 1024 * 1024,  # 10 MB
+        backupCount=5,
+    )
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(file_handler)
+    sys.stdout = StreamToLogger(logger, logging.INFO)
+    sys.stderr = StreamToLogger(
+        logger, logging.INFO
+    )  # model.val() seems to log to error not info so this is a patch
 
-for result in results:
-    for box in result.boxes:
-        class_id = int(box.cls)
-        class_name = class_names[class_id]
-        confidence = box.conf.item()
-        coords = box.xyxy[0].tolist()
-        print(f"Detected: {class_name} (Confidence: {confidence:.2f}) at {coords}")
+    logging.info("Starting YOLOv8 model testing")
 
-annotated_iamge = results[0].plot()
-output_path = "visualizations/YOLOv8_Tuned_Output.jpg"
-cv2.imwrite(output_path, annotated_iamge)
-print(f"Annotated image saved to: {output_path}")
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logging.info(f"Using device: {device}")
+
+    # Load the fine-tuned model
+    model_path = "N:/Projects/Bird Detection/runs/train/yolov8l_cub200/weights/best.pt"
+    if not os.path.exists(model_path):
+        logging.error(f"Model {model_path} not found")
+        sys.exit(1)
+    model = YOLO(model_path)
+    model.to(device)
+    logging.info(f"Loaded model: {model_path}")
+
+    # Path to dataset configuration
+    data_yaml = "N:/Projects/Bird Detection/cub200_yolo/cub200.yaml"
+    if not os.path.exists(data_yaml):
+        logging.error(f"Dataset YAML {data_yaml} not found")
+        sys.exit(1)
+    logging.info(f"Using dataset configuration: {data_yaml}")
+
+    # Evaluate on validation set
+    logging.info("Running validation on validation set")
+    val_results = model.val(
+        data=data_yaml,
+        imgsz=640,
+        batch=16,
+        device=device,
+        max_det=1,
+        save_json=True,  # Save detailed results
+    )
+    logging.info("Validation results:")
+    logging.info(f"mAP50: {val_results.box.map50:.4f}")
+    logging.info(f"mAP50-95: {val_results.box.map:.4f}")
+    logging.info(f"Validation results saved to {val_results.save_dir}")
