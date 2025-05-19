@@ -2,10 +2,10 @@ data/*
 .venv
 __pycache__
 poetry.lock
-models/
-visualizations/
+models/*
 cub200_yolo/images
 cub200_yolo/labels
 *.pth
 *.pt
 runs/
+logs/*

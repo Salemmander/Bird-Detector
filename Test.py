@@ -22,11 +22,16 @@ class StreamToLogger:
 
 
 if __name__ == "__main__":
-    # Set up logging
+
+    model_name = "yolo11n"
+
+    # region Logging
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
+    log_dir = "/media/salem/NVME/Projects/Bird-Detector/logs/"
+    log_file = os.path.join(log_dir, "test_max_det_1.log")
     file_handler = RotatingFileHandler(
-        "N:/Projects/Bird Detection/logs/test_max_det_1.log",
+        log_file,
         maxBytes=10 * 1024 * 1024,  # 10 MB
         backupCount=5,
     )
@@ -35,18 +40,14 @@ if __name__ == "__main__":
     )
     logger.addHandler(file_handler)
     sys.stdout = StreamToLogger(logger, logging.INFO)
-    sys.stderr = StreamToLogger(
-        logger, logging.INFO
-    )  # model.val() seems to log to error not info so this is a patch
+    # model.val() seems to log to error not info so this is a patch
+    sys.stderr = StreamToLogger(logger, logging.INFO)
+    # endregion
 
-    logging.info("Starting YOLOv8 model testing")
-
-    # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
+    logging.info(f"Starting {model_name} model testing with {device}")
 
-    # Load the fine-tuned model
-    model_path = "N:/Projects/Bird Detection/runs/train/yolov8l_cub200/weights/best.pt"
+    model_path = f"runs/train/{model_name}/weights/best.pt"
     if not os.path.exists(model_path):
         logging.error(f"Model {model_path} not found")
         sys.exit(1)
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     logging.info(f"Loaded model: {model_path}")
 
     # Path to dataset configuration
-    data_yaml = "N:/Projects/Bird Detection/cub200_yolo/cub200.yaml"
+    data_yaml = "cub200_yolo/cub200.yaml"
     if not os.path.exists(data_yaml):
         logging.error(f"Dataset YAML {data_yaml} not found")
         sys.exit(1)

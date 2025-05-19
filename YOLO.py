@@ -26,13 +26,17 @@ if __name__ == "__main__":
     epochs = 50
     batch_size = 8
     img_size = 640
-    model_name = "yolov11n.pt"
-    # Set up logging
+    model_path = "models"
+    model_name = "yolo11n.pt"
+
+    # region Logging
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     # File handler with rotation to manage log file size
+    log_dir = "logs/"
+    log_file = os.path.join(log_dir, f"{model_name.split('.')[0]}_training.log")
     file_handler = RotatingFileHandler(
-        f"N:/Projects/Bird Detection/logs/{model_name}_{img_size}_{epochs}_training.log",
+        log_file,
         maxBytes=10 * 1024 * 1024,  # 10 MB
         backupCount=5,
     )
@@ -42,39 +46,35 @@ if __name__ == "__main__":
     logger.addHandler(file_handler)
     # Redirect stdout/stderr to logger
     sys.stdout = StreamToLogger(logger, logging.INFO)
-    sys.stderr = StreamToLogger(
-        logger, logging.INFO
-    )  # model.train() seems to log to stderr not stdout this is a patch for the logging
+    # model.train() seems to log to stderr not stdout this is a patch for the logging
+    sys.stderr = StreamToLogger(logger, logging.INFO)
+    # endregion
 
-    logger.info(f"Epochs: {epochs}, Batch Size: {batch_size}, Image Size: {img_size}")
-    # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info(f"Using device: {device}")
+    logger.info(
+        f"Model: {model_name}, Device: {device}, Epochs: {epochs}, Batch Size: {batch_size}, Image Size: {img_size}"
+    )
 
-    # Set the custom directory for downloading models
-    model_path = "models"
     os.makedirs(model_path, exist_ok=True)
-    settings.update({"weights_dir": model_path})
-    # Load the pre-trained YOLOv8 model
 
     model = YOLO(os.path.join(model_path, model_name))
     model.to(device)
-    logger.info(f"Model being tuned: {model_name}")
-    # Path to the dataset configuration file
-    data_yaml = "N:/Projects/Bird Detection/cub200_yolo/cub200.yaml"
+
+    data_yaml = "cub200_yolo/cub200.yaml"
     logger.info(f"Path to yaml: {data_yaml}")
 
-    # Fine-tune the model
+    model_name = f"{model_name.split('.')[0]}"
+
     model.train(
-        data=data_yaml,  # Path to dataset YAML
-        epochs=epochs,  # Number of training epochs
-        imgsz=img_size,  # Image size
-        batch=batch_size,  # Batch size
-        name=f"{model_name.split('.')[-1]}_cub200_{img_size}_{epochs}",  # Name for saving the model
+        data=data_yaml,
+        epochs=epochs,
+        imgsz=img_size,
+        batch=batch_size,
+        name=model_name,
         exist_ok=True,  # Will overwrite runs with the same name
         project="runs/train",  # Directory to save training results
-        device=device,  # Use GPU or CPU
-        pretrained=True,  # Use pre-trained weights
+        device=device,
+        pretrained=True,
     )
 
-    logger.info(f"Model {model_name} fine-tuned and saved in runs/train/yolov8l_cub200")
+    logger.info(f"Model {model_name} fine-tuned and saved in runs/train/{model_name}")
